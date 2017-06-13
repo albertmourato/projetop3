@@ -25,6 +25,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.telephony.SmsManager;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -49,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
     ListView contacts;
     LocationManager mLocationManager;
     DatabaseOpenHelper dbHelper;
+    PessoaAdapter pessoaAdapter;
 
 
     @Override
@@ -58,8 +61,42 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         init();
         addListeners();
-
+        readSafeContacts();
     }
+
+    public void onStart(){
+        super.onStart();
+
+        readSafeContacts();
+    }
+
+    public void onResume(){
+        super.onResume();
+        readSafeContacts();
+    }
+
+    // create an action bar button
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.layout.action_button, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    // handle button activities
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (true) {
+            // do something here
+            //adicionar contatos de segurança
+            Intent i = new Intent(Intent.ACTION_PICK, Uri.parse("content://contacts"));
+            i.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE);//apenas contatos com telefone
+            startActivityForResult(i, PEGAR_CONTATO_REQ);
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
 
     public void init(){
         dbHelper = new DatabaseOpenHelper(getApplicationContext());
@@ -67,8 +104,8 @@ public class MainActivity extends AppCompatActivity {
         contacts = (ListView) findViewById(R.id.list_view);
         secureContacts = new ArrayList<Pessoa>();
         emergButton = (Button) findViewById(R.id.emerg_button);
-        arrivedButton = (Button) findViewById(R.id.arrivedButton);
-        addContactsButton = (Button) findViewById(R.id.addContactsButton);
+        //arrivedButton = (Button) findViewById(R.id.arrivedButton);
+        //addContactsButton = (Button) findViewById(R.id.addContactsButton);
 
     }
 
@@ -110,13 +147,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        arrivedButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //cheguei bem
-            }
-        });
-
+        /*
         addContactsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -125,7 +156,7 @@ public class MainActivity extends AppCompatActivity {
                 i.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE);//apenas contatos com telefone
                 startActivityForResult(i, PEGAR_CONTATO_REQ);
             }
-        });
+        });*/
     }
 
 
@@ -144,15 +175,9 @@ public class MainActivity extends AppCompatActivity {
                 int column_name = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
 
                 if(cursor.moveToFirst()){
-                    // pega o numero de telefone
+                    // pega o numero de telefone e nome
                     String contactPhone = cursor.getString(column_number);
                     String contactName = cursor.getString(column_name);
-                    Pessoa p = new Pessoa();
-                    p.setTelefone(contactPhone);
-                    p.setNome(contactName);
-                    secureContacts.add(p);
-                    PessoaAdapter pessoaAdapter = new PessoaAdapter(getApplicationContext(), secureContacts);
-                    contacts.setAdapter(pessoaAdapter);
                     saveContact(contactName, contactPhone);
                 }
             }
@@ -168,14 +193,19 @@ public class MainActivity extends AppCompatActivity {
                 DatabaseOpenHelper.columns, null, new String[] {}, null, null,
                 null);
         c.moveToFirst();
-
+        boolean contactExists = false;
+        //verifica se ja existe esse numero na lista de contatos
         while(c.moveToNext()){
             String phone = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NUMBER));
             if(phone.equalsIgnoreCase(contactPhone)){
                 Toast.makeText(getApplicationContext(), "Algum contato já possui este número", Toast.LENGTH_SHORT).show();
-            }else{
-                dbHelper.getWritableDatabase().insert(DatabaseOpenHelper.TABLE_NAME, null,contentValues);
+                contactExists = true;
             }
+        }
+        //se nao existir, adicione
+        if(!contactExists){
+                dbHelper.getWritableDatabase().insert(DatabaseOpenHelper.TABLE_NAME, null,contentValues);
+            contactExists = false;
         }
     }
 
@@ -219,5 +249,24 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+
+    public void readSafeContacts(){
+        secureContacts.clear();
+        //dbHelper.getWritableDatabase().delete(DatabaseOpenHelper.TABLE_NAME,null,null);
+        Cursor c = dbHelper.getReadableDatabase().query(DatabaseOpenHelper.TABLE_NAME,
+                DatabaseOpenHelper.columns, null, new String[] {}, null, null,
+                null);
+        c.moveToFirst();
+        while(c.moveToNext()){
+            String name = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NAME));
+            String phone = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NUMBER));
+            Pessoa p = new Pessoa();
+            p.setNome(name);
+            p.setTelefone(phone);
+            secureContacts.add(p);
+        }
+        pessoaAdapter = new PessoaAdapter(getApplicationContext(), secureContacts);
+        contacts.setAdapter(pessoaAdapter);
+    }
 
 }

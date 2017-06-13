@@ -16,5 +16,6 @@
         android:id="@+id/pessoa_phone"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textStyle="italic"
         android:textSize="18sp" />
 </LinearLayout>
