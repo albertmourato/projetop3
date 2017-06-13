@@ -16,6 +16,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.provider.Contacts;
 import android.provider.ContactsContract;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -43,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
     static ArrayList<Pessoa> secureContacts;
     Button emergButton;
     Button arrivedButton;
+    Button addContactsButton;
     ListView contacts;
     LocationManager mLocationManager;
 
@@ -50,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.SEND_SMS}, 1);
         setContentView(R.layout.activity_main);
         init();
         addListeners();
@@ -62,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
         secureContacts = new ArrayList<Pessoa>();
         emergButton = (Button) findViewById(R.id.emerg_button);
         arrivedButton = (Button) findViewById(R.id.arrivedButton);
+        addContactsButton = (Button) findViewById(R.id.addContactsButton);
 
     }
 
@@ -86,9 +90,6 @@ public class MainActivity extends AppCompatActivity {
                     PendingIntent piEnvio = PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(SENT_BROADCAST), 0);
                     PendingIntent piEntrega = PendingIntent.getBroadcast(getApplicationContext(), 0, new Intent(DELIVERED_BROADCAST), 0);
 
-                    Intent i = new Intent(Intent.ACTION_PICK, Uri.parse("content://contacts"));
-                    i.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE);//apenas contatos com telefone
-                    startActivityForResult(i, PEGAR_CONTATO_REQ);
 
                     SmsManager smsManager = SmsManager.getDefault();
                     if (secureContacts.size() > 0) {
@@ -109,7 +110,17 @@ public class MainActivity extends AppCompatActivity {
         arrivedButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //cheguei bem
+            }
+        });
 
+        addContactsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //adicionar contatos de segurança
+                Intent i = new Intent(Intent.ACTION_PICK, Uri.parse("content://contacts"));
+                i.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE);//apenas contatos com telefone
+                startActivityForResult(i, PEGAR_CONTATO_REQ);
             }
         });
     }
@@ -121,20 +132,27 @@ public class MainActivity extends AppCompatActivity {
                 Uri contactUri = data.getData();
 
                 //pegar apenas o numero de telefone
-                String[] projection = {ContactsContract.CommonDataKinds.Phone.NUMBER};
+                String[] projection = {ContactsContract.CommonDataKinds.Phone.NUMBER,
+                        ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME};
 
                 //fazendo query direto na thread principal...
                 Cursor cursor = getContentResolver().query(contactUri, projection, null, null, null);
-                cursor.moveToFirst();
+                int column_number = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+                int column_name = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
 
-                // pega o numero de telefone
-                int column = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
-                String telContato = cursor.getString(column);
-                Pessoa p = new Pessoa();
-                p.setTelefone(telContato);
-                secureContacts.add(p);
-                ArrayAdapter<Pessoa> arrayAdapter = new ArrayAdapter<Pessoa>(this, android.R.layout.simple_list_item_1, secureContacts);
-                contacts.setAdapter(arrayAdapter);
+                if(cursor.moveToFirst()){
+                    // pega o numero de telefone
+
+                    String contactPhone = cursor.getString(column_number);
+                    String contactName = cursor.getString(column_name);
+                    Pessoa p = new Pessoa();
+                    p.setTelefone(contactPhone);
+                    p.setNome(contactName);
+                    secureContacts.add(p);
+                    PessoaAdapter pessoaAdapter = new PessoaAdapter(getApplicationContext(), secureContacts);
+                    contacts.setAdapter(pessoaAdapter);
+                }
+
             }
         }
     }
