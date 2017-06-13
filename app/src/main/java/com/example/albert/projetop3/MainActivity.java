@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -47,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
     Button addContactsButton;
     ListView contacts;
     LocationManager mLocationManager;
+    DatabaseOpenHelper dbHelper;
 
 
     @Override
@@ -60,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void init(){
+        dbHelper = new DatabaseOpenHelper(getApplicationContext());
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         contacts = (ListView) findViewById(R.id.list_view);
         secureContacts = new ArrayList<Pessoa>();
@@ -142,7 +145,6 @@ public class MainActivity extends AppCompatActivity {
 
                 if(cursor.moveToFirst()){
                     // pega o numero de telefone
-
                     String contactPhone = cursor.getString(column_number);
                     String contactName = cursor.getString(column_name);
                     Pessoa p = new Pessoa();
@@ -151,8 +153,28 @@ public class MainActivity extends AppCompatActivity {
                     secureContacts.add(p);
                     PessoaAdapter pessoaAdapter = new PessoaAdapter(getApplicationContext(), secureContacts);
                     contacts.setAdapter(pessoaAdapter);
+                    saveContact(contactName, contactPhone);
                 }
+            }
+        }
+    }
 
+    public void saveContact(String contactName, String contactPhone){
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(DatabaseOpenHelper.CONTACT_NAME, contactName);
+        contentValues.put(DatabaseOpenHelper.CONTACT_NUMBER, contactPhone);
+        //salvar no DB
+        Cursor c = dbHelper.getReadableDatabase().query(DatabaseOpenHelper.TABLE_NAME,
+                DatabaseOpenHelper.columns, null, new String[] {}, null, null,
+                null);
+        c.moveToFirst();
+
+        while(c.moveToNext()){
+            String phone = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NUMBER));
+            if(phone.equalsIgnoreCase(contactPhone)){
+                Toast.makeText(getApplicationContext(), "Algum contato já possui este número", Toast.LENGTH_SHORT).show();
+            }else{
+                dbHelper.getWritableDatabase().insert(DatabaseOpenHelper.TABLE_NAME, null,contentValues);
             }
         }
     }

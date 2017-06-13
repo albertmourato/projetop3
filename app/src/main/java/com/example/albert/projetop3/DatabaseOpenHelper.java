@@ -20,8 +20,8 @@ import java.util.List;
 
 public class DatabaseOpenHelper extends SQLiteOpenHelper {
     final static String TABLE_NAME = "safe_contacts";
-    final static String CONTACT_NAME = "title";
-    final static String CONTACT_NUMBER = "link";
+    final static String CONTACT_NAME = "name";
+    final static String CONTACT_NUMBER = "number";
     final static String _ID = "_id";
     final static String[] columns = { _ID, CONTACT_NAME, CONTACT_NUMBER};
 
