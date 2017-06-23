@@ -7,10 +7,19 @@ package com.example.albert.projetop3;
 public class Pessoa {
     private String nome;
     private String telefone;
+    private boolean avisar;
     public Pessoa(){}
 
     public String getNome(){
         return this.nome;
+    }
+
+    public void setAvisar(boolean b){
+        avisar = b;
+    }
+
+    public boolean getAvisar(){
+        return avisar;
     }
 
     public void setNome(String s){

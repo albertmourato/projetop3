@@ -28,6 +28,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -37,6 +38,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -45,34 +47,46 @@ public class MainActivity extends AppCompatActivity {
     static final String SENT_BROADCAST = "SMS_ENVIADO";
     static final String DELIVERED_BROADCAST = "SMS_ENTREGUE";
     static ArrayList<Pessoa> secureContacts;
-    Button emergButton;
-    Button arrivedButton;
-    Button addContactsButton;
-    ListView contacts;
-    LocationManager mLocationManager;
-    DatabaseOpenHelper dbHelper;
-    PessoaAdapter pessoaAdapter;
+    private Button emergButton;
+    //Button arrivedButton;
+    //Button addContactsButton;
+    private ListView contacts;
+    private LocationManager mLocationManager;
+    private DatabaseOpenHelper dbHelper;
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.SEND_SMS}, 1);
+        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.SEND_SMS, Manifest.permission.READ_CONTACTS, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
         setContentView(R.layout.activity_main);
         init();
         addListeners();
         readSafeContacts();
+        Button b = (Button) findViewById(R.id.button_card);
+        b.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Cursor c = dbHelper.getReadableDatabase().query(DatabaseOpenHelper.TABLE_NAME,
+                        DatabaseOpenHelper.columns, null, new String[]{}, null, null,
+                        null);
+                Log.d("qtd", c.getCount()+"");
+                Intent i = new Intent(MainActivity.this, CardViewPessoaClickActivity.class);
+                startActivity(i);
+            }
+        });
     }
 
-    public void onStart(){
+    public void onStart() {
         super.onStart();
 
         readSafeContacts();
     }
 
-    public void onResume(){
+    public void onResume() {
         super.onResume();
-        readSafeContacts();
+        //readSafeContacts();
     }
 
     // create an action bar button
@@ -98,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public void init(){
+    public void init() {
         dbHelper = new DatabaseOpenHelper(getApplicationContext());
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         contacts = (ListView) findViewById(R.id.list_view);
@@ -109,11 +123,19 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void populateContactList(){
+    public void addListeners() {
 
-    }
+        contacts.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                Pessoa p = (Pessoa) parent.getItemAtPosition(position);
+                dbHelper.getWritableDatabase().delete(DatabaseOpenHelper.TABLE_NAME, "number=?", new String[]{p.getTelefone()});
+                System.out.println("CLIQUEI EEEEEEEM " + p.getNome() + " " + p.getTelefone());
+                readSafeContacts();
+                return true;
+            }
+        });
 
-    public void addListeners(){
 
         emergButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -123,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
                 if (sendSMS) {
 
 
-                    String message = "Estou correndo perigo!" +"LOCALIZACAO";
+                    String message = "Estou correndo perigo!" + "LOCALIZACAO";
                     registerReceiver(enviadoReceiver, new IntentFilter(SENT_BROADCAST));
                     registerReceiver(entregueReceiver, new IntentFilter(DELIVERED_BROADCAST));
 
@@ -135,12 +157,14 @@ public class MainActivity extends AppCompatActivity {
                     if (secureContacts.size() > 0) {
                         for (Pessoa contact : secureContacts) {
                             System.out.println(contact.getTelefone());
-                            smsManager.sendTextMessage(contact.getTelefone(),null, message, piEnvio, piEntrega);
+                            if(contact.getAvisar()){
+                                //smsManager.sendTextMessage(contact.getTelefone(), null, message, piEnvio, piEntrega);
+                            }
 
                         }
                     }
                 } else {
-                    Toast.makeText(getApplicationContext(),"Conceda permissões em settings", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Conceda permissões em settings", Toast.LENGTH_SHORT).show();
                     finish();
                 }
             }
@@ -168,45 +192,41 @@ public class MainActivity extends AppCompatActivity {
                 //pegar apenas o numero de telefone
                 String[] projection = {ContactsContract.CommonDataKinds.Phone.NUMBER,
                         ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME};
-
                 //fazendo query direto na thread principal...
                 Cursor cursor = getContentResolver().query(contactUri, projection, null, null, null);
+
                 int column_number = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
                 int column_name = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
 
-                if(cursor.moveToFirst()){
+                if (cursor.moveToFirst()) {
                     // pega o numero de telefone e nome
                     String contactPhone = cursor.getString(column_number);
                     String contactName = cursor.getString(column_name);
                     saveContact(contactName, contactPhone);
+                    readSafeContacts();
                 }
             }
         }
     }
 
-    public void saveContact(String contactName, String contactPhone){
+    public void saveContact(String contactName, String contactPhone) {
         ContentValues contentValues = new ContentValues();
         contentValues.put(DatabaseOpenHelper.CONTACT_NAME, contactName);
         contentValues.put(DatabaseOpenHelper.CONTACT_NUMBER, contactPhone);
         //salvar no DB
         Cursor c = dbHelper.getReadableDatabase().query(DatabaseOpenHelper.TABLE_NAME,
-                DatabaseOpenHelper.columns, null, new String[] {}, null, null,
+                DatabaseOpenHelper.columns, "number=?", new String[]{contactPhone}, null, null,
                 null);
         c.moveToFirst();
-        boolean contactExists = false;
-        //verifica se ja existe esse numero na lista de contatos
-        while(c.moveToNext()){
-            String phone = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NUMBER));
-            if(phone.equalsIgnoreCase(contactPhone)){
-                Toast.makeText(getApplicationContext(), "Algum contato já possui este número", Toast.LENGTH_SHORT).show();
-                contactExists = true;
-            }
+
+        if (c.getCount() > 0) {
+            System.out.println(c.getCount() + " CONTATOS COM ESSE NUMERO");
+            Toast.makeText(getApplicationContext(), "Algum contato já possui este número", Toast.LENGTH_SHORT).show();
+        } else {
+            //adiciona o contato
+            dbHelper.getWritableDatabase().insert(DatabaseOpenHelper.TABLE_NAME, null, contentValues);
         }
-        //se nao existir, adicione
-        if(!contactExists){
-                dbHelper.getWritableDatabase().insert(DatabaseOpenHelper.TABLE_NAME, null,contentValues);
-            contactExists = false;
-        }
+
     }
 
     BroadcastReceiver enviadoReceiver = new BroadcastReceiver() {
@@ -250,14 +270,14 @@ public class MainActivity extends AppCompatActivity {
     };
 
 
-    public void readSafeContacts(){
+    public void readSafeContacts() {
         secureContacts.clear();
         //dbHelper.getWritableDatabase().delete(DatabaseOpenHelper.TABLE_NAME,null,null);
         Cursor c = dbHelper.getReadableDatabase().query(DatabaseOpenHelper.TABLE_NAME,
-                DatabaseOpenHelper.columns, null, new String[] {}, null, null,
+                DatabaseOpenHelper.columns, null, new String[]{}, null, null,
                 null);
         c.moveToFirst();
-        while(c.moveToNext()){
+        while (c.moveToNext()) {
             String name = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NAME));
             String phone = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NUMBER));
             Pessoa p = new Pessoa();
@@ -265,8 +285,9 @@ public class MainActivity extends AppCompatActivity {
             p.setTelefone(phone);
             secureContacts.add(p);
         }
-        pessoaAdapter = new PessoaAdapter(getApplicationContext(), secureContacts);
-        contacts.setAdapter(pessoaAdapter);
+        Log.d("qtd", c.getCount()+"");
+        //pessoaAdapter = new PessoaAdapter(getApplicationContext(), secureContacts);
+        //contacts.setAdapter(pessoaAdapter);
     }
 
 }

@@ -22,18 +22,20 @@ public class DatabaseOpenHelper extends SQLiteOpenHelper {
     final static String TABLE_NAME = "safe_contacts";
     final static String CONTACT_NAME = "name";
     final static String CONTACT_NUMBER = "number";
+    final static String CONTACT_ALERT = "alert";
     final static String _ID = "_id";
-    final static String[] columns = { _ID, CONTACT_NAME, CONTACT_NUMBER};
+    final static String[] columns = { _ID, CONTACT_NAME, CONTACT_NUMBER, CONTACT_ALERT};
 
     final private static String CREATE_CMD =
 
             "CREATE TABLE "+TABLE_NAME+" ("
                     + _ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                     + CONTACT_NAME + " TEXT NOT NULL, "
-                    +CONTACT_NUMBER+" TEXT NOT NULL)";
+                    +CONTACT_NUMBER+" TEXT NOT NULL, "
+                    +CONTACT_ALERT+" TEXT NOT NULL)";
 
 
-    final private static String NAME = "safe_contacts_project";
+    final private static String NAME = "safe_contacts";
     final private static Integer VERSION = 1;
     final private Context mContext;
 
