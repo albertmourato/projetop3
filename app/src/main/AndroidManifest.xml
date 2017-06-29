@@ -21,7 +21,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".MainActivity"
+            android:name=".CardViewPessoaClickActivity"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -29,8 +29,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".CardViewPessoaClickActivity" />
-        <activity android:name=".Constants"></activity>
+        <!--
+            <activity android:name=".CardViewPessoaClickActivity" />
+         -->
     </application>
 
 </manifest>

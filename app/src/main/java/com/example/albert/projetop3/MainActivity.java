@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
     // create an action bar button
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.layout.action_button, menu);
+        getMenuInflater().inflate(R.menu.action_button, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
