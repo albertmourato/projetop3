@@ -27,11 +27,12 @@ public class SendMailActivity extends Activity {
 						@Override
 						public void run() {
 							Context mContext = getApplicationContext();
-							String fromEmail = "ams11@cin.ufpe.br";
-							String fromPassword = "********";
+							String fromEmail = "if1001projeto2017.1teste@gmail.com";
+							String fromPassword = "projetop3";
 							String toEmail = "ams11@cin.ufpe.br";
 							String emailSubject = "Quero Férias";
 							String emailBody = "Leopoldo, me passe!";
+							//TODO pegar localizacao
 							List<String> toEmailList = Arrays.asList("ams11@cin.ufpe.br");
 							new SendMailTask(SendMailActivity.this).execute(fromEmail,
 									fromPassword, toEmailList, emailSubject, emailBody);
