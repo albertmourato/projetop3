@@ -9,71 +9,37 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class SendMailActivity extends Activity {
-	Thread thread;
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_main);
+import static java.lang.Thread.sleep;
 
-		thread = new Thread(){
-			@Override
-			public void run() {
-				while(true){
-					runOnUiThread(new Runnable() {
-						@Override
-						public void run() {
-							Context mContext = getApplicationContext();
-							String fromEmail = "if1001projeto2017.1teste@gmail.com";
-							String fromPassword = "projetop3";
-							String toEmail = "ams11@cin.ufpe.br";
-							String emailSubject = "Quero Férias";
-							String emailBody = "Leopoldo, me passe!";
-							//TODO pegar localizacao
-							List<String> toEmailList = Arrays.asList("ams11@cin.ufpe.br");
-							new SendMailTask(SendMailActivity.this).execute(fromEmail,
-									fromPassword, toEmailList, emailSubject, emailBody);
-						}
-					});
-					try{
-						sleep(35000);
-					}catch (Exception e){
-						Toast.makeText(getApplicationContext(), e.toString(), Toast.LENGTH_LONG).show();
-					}
-				}
-			}
-		};
+public class SendMailActivity {
 
+    public SendMailActivity() {}
 
+    //Método que envia email
+    public static void sendMail(final Context context, final Activity activity) {
 
-
-
-		//final Button send = (Button) this.findViewById(R.id.button1);
-	/*
-		send.setOnClickListener(new View.OnClickListener() {
-
-			public void onClick(View v) {
-				Log.i("SendMailActivity", "Send Button Clicked.");
-
-				String fromEmail = ((TextView) findViewById(R.id.editText1))
-						.getText().toString();
-				String fromPassword = ((TextView) findViewById(R.id.editText2))
-						.getText().toString();
-				String toEmails = ((TextView) findViewById(R.id.editText3))
-						.getText().toString();
-				List<String> toEmailList = Arrays.asList(toEmails
-						.split("\\s*,\\s*"));
-				Log.i("SendMailActivity", "To List: " + toEmailList);
-				String emailSubject = ((TextView) findViewById(R.id.editText4))
-						.getText().toString();
-				String emailBody = ((TextView) findViewById(R.id.editText5))
-						.getText().toString();
-				new SendMailTask(SendMailActivity.this).execute(fromEmail,
-						fromPassword, toEmailList, emailSubject, emailBody);
-			}
-		});*/
-	}
+        Context mContext = context;
+        String fromEmail = "if1001projeto2017.1teste@gmail.com";
+        String fromPassword = "projetop3";
+        String emailSubject = "Quero Férias";
+        //pegar localização
+        String emailBody = "Leopoldo, me passe!";
+        //TODO pegar localizacao
+        List<String> toEmailList = new ArrayList<String>();
+        //pode-se adicionar vários emails para receber o alerta com a posição
+        toEmailList.add("ams11@cin.ufpe.br");
+        toEmailList.add("tpa@cin.ufpe.br");
+        Log.d("mandar", "vou mandar o email");
+        new SendMailTask(activity).execute(fromEmail,
+                fromPassword, toEmailList, emailSubject, emailBody);
+        try {
+            sleep(1000);
+        } catch (Exception e) {
+            Toast.makeText(context, e.toString(), Toast.LENGTH_LONG).show();
+        }
+    }
 }
