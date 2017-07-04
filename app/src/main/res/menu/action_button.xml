@@ -7,4 +7,10 @@
         android:title="Adicionar"
         android:showAsAction="always"
         />
+
+    <item
+        android:id="@+id/mybutton2"
+        android:title="Enviar email"
+        android:showAsAction="always"
+        />
 </menu>

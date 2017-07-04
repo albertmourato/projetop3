@@ -48,13 +48,13 @@ public class SendMailTask extends AsyncTask {
 
 	@Override
 	public void onProgressUpdate(Object... values) {
-		statusDialog.setMessage(values[0].toString());
+		//statusDialog.setMessage(values[0].toString());
 
 	}
 
 	@Override
 	public void onPostExecute(Object result) {
-		statusDialog.dismiss();
+		//statusDialog.dismiss();
 	}
 
 }

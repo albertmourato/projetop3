@@ -33,6 +33,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class CardViewPessoaClickActivity extends AppCompatActivity {
@@ -63,6 +65,8 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
         //outras opcoes incluem GridLayoutManager, por ex.
         //tambem pode ser implementado um LayoutManager customizado
 
+        sortList(arrayList);
+
         //definindo o adapter (semelhante a listadapter...)
         recyclerView.setAdapter(new PessoaAdapter(arrayList));
 
@@ -70,6 +74,15 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
         setContentView(recyclerView);
         registerForContextMenu(recyclerView);
 
+    }
+
+    public void sortList(ArrayList<Pessoa> arrayList){
+        Collections.sort(arrayList, new Comparator<Pessoa>() {
+            @Override
+            public int compare(Pessoa o1, Pessoa o2) {
+                return o1.getNome().compareToIgnoreCase(o2.getNome());
+            }
+        });
     }
 
     public void onPause(){
@@ -80,6 +93,7 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         arrayList = getPessoas(mContext);
+        sortList(arrayList);
         recyclerView.setAdapter(new PessoaAdapter(arrayList));
         IntentFilter intent = new IntentFilter("DELETE CONTATO");
         LocalBroadcastManager.getInstance(this).registerReceiver(deleteContact, intent);
@@ -174,12 +188,16 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        if (true) {
-            // do something here
-            //adicionar contatos de segurança
-            Intent i = new Intent(Intent.ACTION_PICK, Uri.parse("content://contacts"));
-            i.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE);//apenas contatos com telefone
-            startActivityForResult(i, PEGAR_CONTATO_REQ);
+        switch (id){
+            case R.id.mybutton:
+                Intent i = new Intent(Intent.ACTION_PICK, Uri.parse("content://contacts"));
+                i.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE);//apenas contatos com telefone
+                startActivityForResult(i, PEGAR_CONTATO_REQ);
+                break;
+
+            case R.id.mybutton2:
+                SendMail.sendMail(mContext, CardViewPessoaClickActivity.this);
+                break;
         }
         return super.onOptionsItemSelected(item);
     }

@@ -15,9 +15,9 @@ import java.util.List;
 
 import static java.lang.Thread.sleep;
 
-public class SendMailActivity {
+public class SendMail {
 
-    public SendMailActivity() {}
+    public SendMail() {}
 
     //Método que envia email
     public static void sendMail(final Context context, final Activity activity) {
@@ -26,14 +26,15 @@ public class SendMailActivity {
         String fromEmail = "if1001projeto2017.1teste@gmail.com";
         String fromPassword = "projetop3";
         String emailSubject = "Quero Férias";
-        //pegar localização
-        String emailBody = "Leopoldo, me passe!";
+
         //TODO pegar localizacao
+        String emailBody = "Leopoldo, me passe!";
+
         List<String> toEmailList = new ArrayList<String>();
         //pode-se adicionar vários emails para receber o alerta com a posição
         toEmailList.add("ams11@cin.ufpe.br");
         toEmailList.add("tpa@cin.ufpe.br");
-        Log.d("mandar", "vou mandar o email");
+
         new SendMailTask(activity).execute(fromEmail,
                 fromPassword, toEmailList, emailSubject, emailBody);
         try {
