@@ -61,7 +61,7 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         mContext = getApplicationContext();
         dbHelper = new DatabaseOpenHelper(mContext);
-        arrayList = getPessoas(mContext);
+        arrayList = getContacts(mContext);
         //criando view
         recyclerView = new RecyclerView(this);
 
@@ -102,11 +102,12 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
 
     protected void onResume() {
         super.onResume();
-        arrayList = getPessoas(mContext);
+        arrayList = getContacts(mContext);
         sortList(arrayList);
         recyclerView.setAdapter(new PessoaAdapter(arrayList));
         IntentFilter intent = new IntentFilter("DELETE CONTATO");
         LocalBroadcastManager.getInstance(this).registerReceiver(deleteContact, intent);
+        Log.d("armazenados", arrayList.size() + "");
     }
 
     private BroadcastReceiver deleteContact = new BroadcastReceiver() {
@@ -115,7 +116,7 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
             Bundle b = intent.getExtras();
             dbHelper.getWritableDatabase().delete(DatabaseOpenHelper.TABLE_NAME, "number=?", new String[]{b.getString("phone", "-1")});
             Toast.makeText(getApplicationContext(), "Contato deletado!", Toast.LENGTH_SHORT).show();
-            arrayList = getPessoas(mContext);
+            arrayList = getContacts(mContext);
             recyclerView.setAdapter(new PessoaAdapter(arrayList));
         }
     };
@@ -167,22 +168,25 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
 
     }
 
-    public ArrayList<Pessoa> getPessoas(Context context) {
+    public ArrayList<Pessoa> getContacts(Context context) {
         ArrayList<Pessoa> a = new ArrayList<Pessoa>();
         Cursor c = dbHelper.getReadableDatabase().query(DatabaseOpenHelper.TABLE_NAME,
                 DatabaseOpenHelper.columns, null, new String[]{}, null, null,
                 null);
-        c.moveToFirst();
-        System.out.println(c.getCount());
-        while (c.moveToNext()) {
-            String name = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NAME));
-            String phone = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NUMBER));
-            String avisar = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_ALERT));
-            Pessoa p = new Pessoa();
-            p.setNome(name);
-            p.setTelefone(phone);
-            p.setAvisar((avisar.equals("true")) ? true : false);
-            a.add(p);
+
+        Log.d("armazenado", c.getCount() + "pessoas armazenadas");
+        if (c.moveToFirst()) {
+            do {
+                String name = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NAME));
+                String phone = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NUMBER));
+                String avisar = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_ALERT));
+                Pessoa p = new Pessoa();
+                p.setNome(name);
+                p.setTelefone(phone);
+                p.setAvisar((avisar.equals("true")) ? true : false);
+                a.add(p);
+            } while (c.moveToNext());
+            c.close();
         }
         return a;
     }
@@ -209,12 +213,11 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
 
             //botao para testar
             case R.id.mybutton2:
-                SendMail.sendMail(mContext, CardViewPessoaClickActivity.this, "localizacao");
+                SendMail.sendMail(mContext, CardViewPessoaClickActivity.this, "Localizacao");
                 break;
 
             case R.id.mybutton3:
-                Log.d("enviei", "Enviei");
-                SendSMS.sendSms(mContext, CardViewPessoaClickActivity.this, "localizacao");
+                SendSMS.sendSms(mContext, "localizacao");
                 break;
 
         }
@@ -265,6 +268,7 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
         Switch aSwitch = null;
 
         //poderia tambem passar algum objeto aqui construido no adapter, para nao adicionar atributos
+        //um card
         CardClickHolder(View row) {
             super(row);
             icone = (ImageView) row.findViewById(R.id.icone);
@@ -293,10 +297,6 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
                     else icone.setImageResource(R.drawable.delete);
                 }
             });
-
-        }
-
-        public void disableEnable() {
 
         }
 
@@ -329,113 +329,6 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
             LocalBroadcastManager.getInstance(mContext).sendBroadcast(delContact);
             return true;
         }
-    }
-
-
-
-
-
-
-    //Problems with doing it in another class
-
-    public void sendSms(String location) {
-
-        registerReceiver(enviadoReceiver, new IntentFilter(SENT_BROADCAST));
-        registerReceiver(entregueReceiver, new IntentFilter(DELIVERED_BROADCAST));
-
-        PendingIntent piEnvio = PendingIntent.getBroadcast(this, 0, new Intent(SENT_BROADCAST), 0);
-        PendingIntent piEntrega = PendingIntent.getBroadcast(this, 0, new Intent(DELIVERED_BROADCAST), 0);
-
-        SmsManager smsManager = SmsManager.getDefault();
-        ArrayList<Pessoa> safeContacts = getPessoasSelecionadas(mContext);
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-        if (safeContacts.size() > 0) {
-            for (Pessoa p : safeContacts) {
-                Log.d("pessoa", p.getNome());
-                String currentDateandTime = sdf.format(new Date());
-
-                String message = "Estou correndo perigo!\nLocalização: " + location + "\nHora: " + currentDateandTime;
-
-                smsManager.sendTextMessage(p.getTelefone()+"", null, message, piEnvio, piEntrega);
-                Log.d("pessoa", "mandei para " + p.getNome());
-                Log.d("pessoa", message);
-                break;
-
-            }
-        } else {
-            Toast.makeText(getApplicationContext(), "Nenhum contato selecionado para receber alerta!", Toast.LENGTH_SHORT).show();
-        }
-
-    }
-
-
-    //Get only contacts whose notify boolean is true
-    public static ArrayList<Pessoa> getPessoasSelecionadas(Context context) {
-        ArrayList<Pessoa> a = new ArrayList<Pessoa>();
-        DatabaseOpenHelper dbHelper = new DatabaseOpenHelper(mContext);
-        Cursor c = dbHelper.getReadableDatabase().query(DatabaseOpenHelper.TABLE_NAME,
-                DatabaseOpenHelper.columns, null, new String[]{}, null, null,
-                null);
-        c.moveToFirst();
-        Log.d("qtdContacts", c.getCount() + "");
-        while (c.moveToNext()) {
-            String name = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NAME));
-            String phone = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NUMBER));
-            String avisar = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_ALERT));
-            if (avisar.equals("true")) {
-                Pessoa p = new Pessoa();
-                p.setNome(name);
-                p.setTelefone(phone);
-                p.setAvisar((avisar.equals("true")) ? true : false);
-                a.add(p);
-            }
-        }
-        return a;
-    }
-
-    BroadcastReceiver enviadoReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            switch (getResultCode()) {
-                case Activity.RESULT_OK:
-                    Toast.makeText(getBaseContext(), "SMS enviado", Toast.LENGTH_SHORT).show();
-                    break;
-                case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
-                    Toast.makeText(getBaseContext(), "Falha geral", Toast.LENGTH_SHORT).show();
-                    break;
-                case SmsManager.RESULT_ERROR_NO_SERVICE:
-                    Toast.makeText(getBaseContext(), "Sem serviço", Toast.LENGTH_SHORT).show();
-                    break;
-                case SmsManager.RESULT_ERROR_NULL_PDU:
-                    Toast.makeText(getBaseContext(), "Null PDU", Toast.LENGTH_SHORT).show();
-                    break;
-                case SmsManager.RESULT_ERROR_RADIO_OFF:
-                    Toast.makeText(getBaseContext(), "Radio off", Toast.LENGTH_SHORT).show();
-                    break;
-            }
-
-            unregisterReceiver(this);
-        }
-    };
-
-    BroadcastReceiver entregueReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            switch (getResultCode()) {
-                case Activity.RESULT_OK:
-                    Toast.makeText(getBaseContext(), "SMS entregue", Toast.LENGTH_SHORT).show();
-                    break;
-                case Activity.RESULT_CANCELED:
-                    Toast.makeText(getBaseContext(), "SMS não foi entregue", Toast.LENGTH_SHORT).show();
-                    break;
-            }
-            unregisterReceiver(this);
-        }
-    };
-
-    public void enviarSms(String numero, String mensagem){
-        SmsManager smsManager = SmsManager.getDefault();
-        smsManager.sendTextMessage(numero, null, mensagem, null, null);
     }
 }
 

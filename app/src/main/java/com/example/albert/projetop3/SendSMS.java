@@ -38,59 +38,47 @@ public class SendSMS {
     public SendSMS() {}
 
 
-    public static void sendSms(Context context, Activity activity, String location) {
-        boolean sendSMS = ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED;
-        ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.SEND_SMS}, 1);
-        sendSMS = ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED;
-        if (sendSMS) {
-            SmsManager smsManager = SmsManager.getDefault();
-            ArrayList<Pessoa> safeContacts = getPessoas(mContext);
+    public static void sendSms(Context context, String location) {
+        SmsManager smsManager = SmsManager.getDefault();
+        ArrayList<Pessoa> contacts = getSelectedContacts(context);
+        if (contacts.size() > 0) {
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-            if (safeContacts.size() > 0) {
-                for (Pessoa p : safeContacts) {
-                    Log.d("pessoa", p.getNome());
-                    String currentDateandTime = sdf.format(new Date());
-
-                    String message = "Estou correndo perigo!\nLocalização: " + location + "\nHora: " + currentDateandTime;
-
-                    smsManager.sendTextMessage(p.getTelefone(), null, message, null, null);
-
-                    Log.d("pessoa", "mandei para " + p.getNome());
-                    Log.d("pessoa", message);
-
-                }
-            } else {
-                Toast.makeText(context, "Nenhum contato selecionado para receber alerta!", Toast.LENGTH_SHORT).show();
+            for (Pessoa contact : contacts) {
+                String currentDateandTime = sdf.format(new Date());
+                String message = "Estou correndo perigo!\nLocalizacao: " + location + "\nData: " + currentDateandTime;
+                smsManager.sendTextMessage(contact.getTelefone(), null, message, null, null);
             }
-
         } else {
-            Toast.makeText(context, "Conceda permissões em settings", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Nenhum contado habilitado para receber alerta!", Toast.LENGTH_SHORT).show();
         }
     }
 
 
     //Get only contacts whose notify boolean is true
-    public static ArrayList<Pessoa> getPessoas(Context context) {
+    public static ArrayList<Pessoa> getSelectedContacts(Context context) {
         ArrayList<Pessoa> a = new ArrayList<Pessoa>();
         DatabaseOpenHelper dbHelper = new DatabaseOpenHelper(mContext);
         Cursor c = dbHelper.getReadableDatabase().query(DatabaseOpenHelper.TABLE_NAME,
                 DatabaseOpenHelper.columns, null, new String[]{}, null, null,
                 null);
-        c.moveToFirst();
         Log.d("qtdContacts", c.getCount() + "");
-        while (c.moveToNext()) {
-            String name = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NAME));
-            String phone = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NUMBER));
-            String avisar = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_ALERT));
-            if (avisar.equals("true")) {
-                Pessoa p = new Pessoa();
-                p.setNome(name);
-                p.setTelefone(phone);
-                p.setAvisar((avisar.equals("true")) ? true : false);
-                a.add(p);
-            }
+        if(c.moveToFirst()){
+            do{
+                String name = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NAME));
+                String phone = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NUMBER));
+                String avisar = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_ALERT));
+                if(avisar.equals("true")){
+                    Pessoa p = new Pessoa();
+                    p.setNome(name);
+                    p.setTelefone(phone);
+                    p.setAvisar((avisar.equals("true")) ? true : false);
+                    a.add(p);
+                }
+            }while(c.moveToNext());
+            c.close();
         }
         return a;
     }
+
 
 }
