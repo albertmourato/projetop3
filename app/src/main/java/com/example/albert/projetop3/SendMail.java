@@ -20,15 +20,15 @@ public class SendMail {
     public SendMail() {}
 
     //Método que envia email
-    public static void sendMail(final Context context, final Activity activity) {
+    public static void sendMail(final Context context, final Activity activity, String location) {
 
         Context mContext = context;
         String fromEmail = "if1001projeto2017.1teste@gmail.com";
         String fromPassword = "projetop3";
-        String emailSubject = "Quero Férias";
+        String emailSubject = "ALERTA!";
 
         //TODO pegar localizacao
-        String emailBody = "Leopoldo, me passe!";
+        String emailBody = "Localização atual: "+location;
 
         List<String> toEmailList = new ArrayList<String>();
         //pode-se adicionar vários emails para receber o alerta com a posição

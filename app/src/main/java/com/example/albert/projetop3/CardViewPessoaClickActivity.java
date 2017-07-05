@@ -139,6 +139,7 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
         ContentValues contentValues = new ContentValues();
         contentValues.put(DatabaseOpenHelper.CONTACT_NAME, contactName);
         contentValues.put(DatabaseOpenHelper.CONTACT_NUMBER, contactPhone);
+        //por default, os contatos são salvos para receber mensagem, por isso o valor true em CONTACT_ALERT
         contentValues.put(DatabaseOpenHelper.CONTACT_ALERT, "true");
         //salvar no DB
         Cursor c = dbHelper.getReadableDatabase().query(DatabaseOpenHelper.TABLE_NAME,
@@ -195,9 +196,17 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
                 startActivityForResult(i, PEGAR_CONTATO_REQ);
                 break;
 
+
+
+            //botao para testar
             case R.id.mybutton2:
-                SendMail.sendMail(mContext, CardViewPessoaClickActivity.this);
+                SendMail.sendMail(mContext, CardViewPessoaClickActivity.this, "");
                 break;
+
+            case R.id.mybutton3:
+                SendSMS.sendSms(mContext, CardViewPessoaClickActivity.this, "localizacao");
+                break;
+
         }
         return super.onOptionsItemSelected(item);
     }
@@ -244,7 +253,6 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
         TextView telefone = null;
         ImageView icone = null;
         Switch aSwitch = null;
-        Uri site = null;
 
         //poderia tambem passar algum objeto aqui construido no adapter, para nao adicionar atributos
         CardClickHolder(View row) {
@@ -260,6 +268,8 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
             row.setOnClickListener(this);
             row.setOnLongClickListener(this);
 
+
+
             aSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -272,9 +282,12 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
                             new String[]{telefone.getText().toString()});
                     if(aSwitch.isChecked())icone.setImageResource(R.drawable.ok);
                     else icone.setImageResource(R.drawable.delete);
-
                 }
             });
+
+        }
+
+        public void disableEnable(){
 
         }
 

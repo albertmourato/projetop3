@@ -13,4 +13,11 @@
         android:title="Enviar email"
         android:showAsAction="always"
         />
+
+    <item
+        android:id="@+id/mybutton3"
+        android:title="Enviar SMS"
+        android:showAsAction="always"
+        />
+
 </menu>
