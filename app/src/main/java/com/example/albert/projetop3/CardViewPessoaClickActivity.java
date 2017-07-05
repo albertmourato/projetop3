@@ -1,22 +1,28 @@
 package com.example.albert.projetop3;
 
 
+import android.Manifest;
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.provider.SyncStateContract;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -32,9 +38,11 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 
 public class CardViewPessoaClickActivity extends AppCompatActivity {
@@ -48,6 +56,8 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //boolean sendSMS = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED;
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.SEND_SMS}, 1);
         super.onCreate(savedInstanceState);
         mContext = getApplicationContext();
         dbHelper = new DatabaseOpenHelper(mContext);
@@ -76,7 +86,7 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
 
     }
 
-    public void sortList(ArrayList<Pessoa> arrayList){
+    public void sortList(ArrayList<Pessoa> arrayList) {
         Collections.sort(arrayList, new Comparator<Pessoa>() {
             @Override
             public int compare(Pessoa o1, Pessoa o2) {
@@ -85,7 +95,7 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
         });
     }
 
-    public void onPause(){
+    public void onPause() {
         super.onPause();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(deleteContact);
     }
@@ -171,7 +181,7 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
             Pessoa p = new Pessoa();
             p.setNome(name);
             p.setTelefone(phone);
-            p.setAvisar((avisar.equals("true"))? true:false);
+            p.setAvisar((avisar.equals("true")) ? true : false);
             a.add(p);
         }
         return a;
@@ -189,7 +199,7 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        switch (id){
+        switch (id) {
             case R.id.mybutton:
                 Intent i = new Intent(Intent.ACTION_PICK, Uri.parse("content://contacts"));
                 i.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE);//apenas contatos com telefone
@@ -197,13 +207,13 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
                 break;
 
 
-
             //botao para testar
             case R.id.mybutton2:
-                SendMail.sendMail(mContext, CardViewPessoaClickActivity.this, "");
+                SendMail.sendMail(mContext, CardViewPessoaClickActivity.this, "localizacao");
                 break;
 
             case R.id.mybutton3:
+                Log.d("enviei", "Enviei");
                 SendSMS.sendSms(mContext, CardViewPessoaClickActivity.this, "localizacao");
                 break;
 
@@ -235,7 +245,7 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(CardClickHolder holder, int position) {
             //responsavel por atualizar ViewHolder com dados de um elemento na posição 'position'
-            Log.d("infoPessoa", pessoas.get(position).getAvisar()+"");
+            Log.d("infoPessoa", pessoas.get(position).getAvisar() + "");
             holder.bindModel(pessoas.get(position));
         }
 
@@ -269,25 +279,24 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
             row.setOnLongClickListener(this);
 
 
-
             aSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     //Toast.makeText(buttonView.getContext(), isChecked+"", Toast.LENGTH_SHORT).show();
                     DatabaseOpenHelper dbHelper = new DatabaseOpenHelper(mContext);
                     ContentValues values = new ContentValues();
-                    values.put(DatabaseOpenHelper.CONTACT_ALERT, isChecked? "true": "false");
+                    values.put(DatabaseOpenHelper.CONTACT_ALERT, isChecked ? "true" : "false");
                     dbHelper.getWritableDatabase().update(DatabaseOpenHelper.TABLE_NAME, values,
                             DatabaseOpenHelper.CONTACT_NUMBER + "=?",
                             new String[]{telefone.getText().toString()});
-                    if(aSwitch.isChecked())icone.setImageResource(R.drawable.ok);
+                    if (aSwitch.isChecked()) icone.setImageResource(R.drawable.ok);
                     else icone.setImageResource(R.drawable.delete);
                 }
             });
 
         }
 
-        public void disableEnable(){
+        public void disableEnable() {
 
         }
 
@@ -295,7 +304,7 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
             nome.setText(p.getNome());
             telefone.setText(p.getTelefone());
             aSwitch.setChecked(p.getAvisar());
-            if(aSwitch.isChecked())icone.setImageResource(R.drawable.ok);
+            if (aSwitch.isChecked()) icone.setImageResource(R.drawable.ok);
             else icone.setImageResource(R.drawable.delete);
         }
 
@@ -303,7 +312,7 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
         @Override
         public void onClick(View v) {
             int position = getAdapterPosition();
-            Toast.makeText(v.getContext(), "Clique e segure para excluir um contato",Toast.LENGTH_SHORT).show();
+            Toast.makeText(v.getContext(), "Clique e segure para excluir um contato", Toast.LENGTH_SHORT).show();
             //TextView phone = (TextView) v.findViewById(R.id.telefone);
             //Toast.makeText(v.getContext(), phone.getText().toString(), Toast.LENGTH_SHORT).show();
 
@@ -314,14 +323,119 @@ public class CardViewPessoaClickActivity extends AppCompatActivity {
         @Override
         public boolean onLongClick(View v) {
             int position = getAdapterPosition();
-            //TODO delete
-            TextView phone = (TextView)v.findViewById(R.id.telefone);
+            TextView phone = (TextView) v.findViewById(R.id.telefone);
             Intent delContact = new Intent("DELETE CONTATO");
             delContact.putExtra("phone", phone.getText().toString());
             LocalBroadcastManager.getInstance(mContext).sendBroadcast(delContact);
             return true;
         }
+    }
 
+
+
+
+
+
+    //Problems with doing it in another class
+
+    public void sendSms(String location) {
+
+        registerReceiver(enviadoReceiver, new IntentFilter(SENT_BROADCAST));
+        registerReceiver(entregueReceiver, new IntentFilter(DELIVERED_BROADCAST));
+
+        PendingIntent piEnvio = PendingIntent.getBroadcast(this, 0, new Intent(SENT_BROADCAST), 0);
+        PendingIntent piEntrega = PendingIntent.getBroadcast(this, 0, new Intent(DELIVERED_BROADCAST), 0);
+
+        SmsManager smsManager = SmsManager.getDefault();
+        ArrayList<Pessoa> safeContacts = getPessoasSelecionadas(mContext);
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        if (safeContacts.size() > 0) {
+            for (Pessoa p : safeContacts) {
+                Log.d("pessoa", p.getNome());
+                String currentDateandTime = sdf.format(new Date());
+
+                String message = "Estou correndo perigo!\nLocalização: " + location + "\nHora: " + currentDateandTime;
+
+                smsManager.sendTextMessage(p.getTelefone()+"", null, message, piEnvio, piEntrega);
+                Log.d("pessoa", "mandei para " + p.getNome());
+                Log.d("pessoa", message);
+                break;
+
+            }
+        } else {
+            Toast.makeText(getApplicationContext(), "Nenhum contato selecionado para receber alerta!", Toast.LENGTH_SHORT).show();
+        }
+
+    }
+
+
+    //Get only contacts whose notify boolean is true
+    public static ArrayList<Pessoa> getPessoasSelecionadas(Context context) {
+        ArrayList<Pessoa> a = new ArrayList<Pessoa>();
+        DatabaseOpenHelper dbHelper = new DatabaseOpenHelper(mContext);
+        Cursor c = dbHelper.getReadableDatabase().query(DatabaseOpenHelper.TABLE_NAME,
+                DatabaseOpenHelper.columns, null, new String[]{}, null, null,
+                null);
+        c.moveToFirst();
+        Log.d("qtdContacts", c.getCount() + "");
+        while (c.moveToNext()) {
+            String name = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NAME));
+            String phone = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_NUMBER));
+            String avisar = c.getString(c.getColumnIndex(DatabaseOpenHelper.CONTACT_ALERT));
+            if (avisar.equals("true")) {
+                Pessoa p = new Pessoa();
+                p.setNome(name);
+                p.setTelefone(phone);
+                p.setAvisar((avisar.equals("true")) ? true : false);
+                a.add(p);
+            }
+        }
+        return a;
+    }
+
+    BroadcastReceiver enviadoReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (getResultCode()) {
+                case Activity.RESULT_OK:
+                    Toast.makeText(getBaseContext(), "SMS enviado", Toast.LENGTH_SHORT).show();
+                    break;
+                case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
+                    Toast.makeText(getBaseContext(), "Falha geral", Toast.LENGTH_SHORT).show();
+                    break;
+                case SmsManager.RESULT_ERROR_NO_SERVICE:
+                    Toast.makeText(getBaseContext(), "Sem serviço", Toast.LENGTH_SHORT).show();
+                    break;
+                case SmsManager.RESULT_ERROR_NULL_PDU:
+                    Toast.makeText(getBaseContext(), "Null PDU", Toast.LENGTH_SHORT).show();
+                    break;
+                case SmsManager.RESULT_ERROR_RADIO_OFF:
+                    Toast.makeText(getBaseContext(), "Radio off", Toast.LENGTH_SHORT).show();
+                    break;
+            }
+
+            unregisterReceiver(this);
+        }
+    };
+
+    BroadcastReceiver entregueReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (getResultCode()) {
+                case Activity.RESULT_OK:
+                    Toast.makeText(getBaseContext(), "SMS entregue", Toast.LENGTH_SHORT).show();
+                    break;
+                case Activity.RESULT_CANCELED:
+                    Toast.makeText(getBaseContext(), "SMS não foi entregue", Toast.LENGTH_SHORT).show();
+                    break;
+            }
+            unregisterReceiver(this);
+        }
+    };
+
+    public void enviarSms(String numero, String mensagem){
+        SmsManager smsManager = SmsManager.getDefault();
+        smsManager.sendTextMessage(numero, null, mensagem, null, null);
     }
 }
 

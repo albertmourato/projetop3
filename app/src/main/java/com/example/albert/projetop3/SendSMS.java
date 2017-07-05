@@ -12,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.telephony.SmsManager;
 import android.util.Log;
 import android.widget.Toast;
@@ -26,24 +27,23 @@ import static android.telephony.SmsManager.getDefault;
 import static com.example.albert.projetop3.CardViewPessoaClickActivity.DELIVERED_BROADCAST;
 import static com.example.albert.projetop3.CardViewPessoaClickActivity.SENT_BROADCAST;
 import static com.example.albert.projetop3.CardViewPessoaClickActivity.mContext;
+import static java.lang.Thread.sleep;
 
 /**
  * Created by albert on 04/07/17.
  */
 
 public class SendSMS {
-    public SendSMS() {
-    }
+
+    public SendSMS() {}
 
 
     public static void sendSms(Context context, Activity activity, String location) {
         boolean sendSMS = ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED;
         ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.SEND_SMS}, 1);
+        sendSMS = ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED;
         if (sendSMS) {
             SmsManager smsManager = SmsManager.getDefault();
-            PendingIntent sentPI;
-            String SENT = "SMS_SENT";
-            sentPI = PendingIntent.getBroadcast(activity.getApplicationContext(), 0,new Intent(SENT), 0);
             ArrayList<Pessoa> safeContacts = getPessoas(mContext);
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
             if (safeContacts.size() > 0) {
@@ -53,7 +53,7 @@ public class SendSMS {
 
                     String message = "Estou correndo perigo!\nLocalização: " + location + "\nHora: " + currentDateandTime;
 
-                    smsManager.sendTextMessage(p.getTelefone(), null, message, sentPI, null);
+                    smsManager.sendTextMessage(p.getTelefone(), null, message, null, null);
 
                     Log.d("pessoa", "mandei para " + p.getNome());
                     Log.d("pessoa", message);
@@ -92,4 +92,5 @@ public class SendSMS {
         }
         return a;
     }
+
 }
